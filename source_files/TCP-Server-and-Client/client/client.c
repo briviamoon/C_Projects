@@ -1,24 +1,22 @@
 #include "../headers/server.h"
-
-int main()
+/**
+ * main - initiate Server to Live.
+ * Return: 0 if proccess succesful.
+*/
+int main(void)
 {
 	int socketFD;
 	/*char *ip = "192.168.8.137";*/
 	char *ip = "142.250.188.46";
-	int result;
+	int res;
 	char *message;
 	char buffer[1024];
-	struct sockaddr_in address;
+	struct sockaddr_in *address = createIPV4Address(80, ip);
 
 	socketFD = socket(AF_INET, SOCK_STREAM, 0);
+	res = connect(socketFD, (struct sockaddr *)address, sizeof(struct sockaddr));
 
-	address.sin_port = htons(80);
-	address.sin_family = AF_INET;
-	inet_pton(AF_INET, ip, &address.sin_addr.s_addr);
-
-	result = connect(socketFD, (struct sockaddr *)&address, sizeof(address));
-
-	if (result == 0)
+	if (res == 0)
 	{
 		printf("connection up and running!\n");
 	}
