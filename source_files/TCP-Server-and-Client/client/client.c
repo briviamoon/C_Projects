@@ -2,29 +2,58 @@
 /**
  * main - initiate Server to Live.
  * Return: 0 if proccess succesful.
-*/
-int main(void)
+ */
+int main(int argc, char *argv[])
 {
-	int socketFD;
-	/*char *ip = "192.168.8.137";*/
-	char *ip = "142.250.188.46";
-	int res;
+	int clientSocketFD;
+	char *port;
+	char *address;
+	int errorChek;
 	char *message;
-	char buffer[1024];
-	struct sockaddr_in *address = createIPV4Address(80, ip);
+	char buffer[2048];
+	struct sockaddr_in *clientAddress;
 
-	socketFD = socket(AF_INET, SOCK_STREAM, 0);
-	res = connect(socketFD, (struct sockaddr *)address, sizeof(struct sockaddr));
-
-	if (res == 0)
+	if (argc < 3)
 	{
-		printf("connection up and running!\n");
+		printf("Please Provide the Server Address and port to use\n");
+		exit(1);
+	}
+
+	address = argv[1];
+	port = argv[2];
+
+	clientSocketFD = socket(AF_INET, SOCK_STREAM, 0);
+	if (clientSocketFD == -1)
+	{
+		printf("ClientSocket creation Failed\n");
+		exit(1);
+	}
+	else
+	{
+		printf("ClientSocket creation successfull\n");
+	}
+
+	clientAddress = createIPV4Address(atoi(port), address);
+	if (clientAddress == NULL)
+	{
+		printf("ClientSocket Address creation faliled\n");
+		exit(1);
+	}
+	else
+	{
+		printf("ClientSocket address creation successfull\n");
+	}
+	errorChek = connect(clientSocketFD, (struct sockaddr *)clientAddress, sizeof(struct sockaddr));
+
+	if (errorChek == 0)
+	{
+		printf("Client connection up and running!\n");
 	}
 
 	message = "GET \\ HTTP/1.1\r\nHost:google.com\r\n\r\n";
-	send(socketFD, message, strlen(message), 0);
+	send(clientSocketFD, message, strlen(message), 0);
 
-	recv(socketFD, buffer, 1024, 0);
+	recv(clientSocketFD, buffer, 2048, 0);
 
 	printf("From Goorle Server: %s\n", buffer);
 

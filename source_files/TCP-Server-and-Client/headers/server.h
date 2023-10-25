@@ -9,4 +9,5 @@
 #include <string.h>
 
 struct sockaddr_in* createIPV4Address(int port, char *ip);
+
 #endif
