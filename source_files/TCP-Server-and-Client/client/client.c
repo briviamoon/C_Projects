@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 
 	if (errorChek == 0)
 	{
-		printf("Client connection up and running!\n");
+		printf("Client connection established!\n");
 	}
 
 	message = "GET \\ HTTP/1.1\r\nHost:google.com\r\n\r\n";
