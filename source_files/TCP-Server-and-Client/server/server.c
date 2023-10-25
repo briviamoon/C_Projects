@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
 	char *port;
 	char *address;
 	char buffer[2048];
+	char *messageToClient;
 	struct sockaddr_in *serverAddress;
 	struct sockaddr_in *clientAddress;
 
@@ -24,14 +25,16 @@ int main(int argc, char *argv[])
 
 	address = argv[1];
 	port = argv[2];
-
 	serverSocketFD = socket(AF_INET, SOCK_STREAM, 0);
+
 	if (serverSocketFD == -1)
 	{
 		printf("ServerSocket creation Failed\n");
 		exit(1);
 	}
+
 	serverAddress = createIPV4Address(atoi(port), address);
+
 	if (serverAddress == NULL)
 	{
 		printf("Server Socket address creation failed\n");
@@ -39,6 +42,7 @@ int main(int argc, char *argv[])
 	}
 
 	errorCheck = bind(serverSocketFD, (struct sockaddr *)serverAddress, sizeof(*serverAddress));
+
 	if (errorCheck == 0)
 	{
 		printf("server Socket bound successfully\n");
@@ -50,6 +54,7 @@ int main(int argc, char *argv[])
 	}
 
 	errorCheck = listen(serverSocketFD, 10);
+
 	if (errorCheck == 0)
 	{
 		printf("listening for Clients thorugh Server: %s port: %s\n", address, port);
@@ -61,9 +66,9 @@ int main(int argc, char *argv[])
 	}
 
 	clientAddress = malloc(sizeof(struct sockaddr_in));
-
 	sizeOfClientAddress = sizeof(struct sockaddr_in);
 	clientSocketFD = accept(serverSocketFD, (struct sockaddr *)clientAddress, &sizeOfClientAddress);
+
 	if (clientSocketFD == -1)
 	{
 		printf("ServerSide ClientSocketFD creation Failed\n");
@@ -72,11 +77,12 @@ int main(int argc, char *argv[])
 	else
 	{
 		printf("ServerSide ClientSocketFD creation passed\n");
+		messageToClient = "Package Received";
+		send(clientSocketFD, messageToClient, strlen(messageToClient), 0);
 	}
 
 	recv(clientSocketFD, buffer, 2048, 0);
-
-	printf("%s\n", buffer);
+	printf("From Client: %s\n", buffer);
 
 	return (0);
 }

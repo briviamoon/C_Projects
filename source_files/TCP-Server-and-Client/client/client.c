@@ -21,8 +21,8 @@ int main(int argc, char *argv[])
 
 	address = argv[1];
 	port = argv[2];
-
 	clientSocketFD = socket(AF_INET, SOCK_STREAM, 0);
+
 	if (clientSocketFD == -1)
 	{
 		printf("ClientSocket creation Failed\n");
@@ -34,6 +34,7 @@ int main(int argc, char *argv[])
 	}
 
 	clientAddress = createIPV4Address(atoi(port), address);
+
 	if (clientAddress == NULL)
 	{
 		printf("ClientSocket Address creation faliled\n");
@@ -43,6 +44,7 @@ int main(int argc, char *argv[])
 	{
 		printf("ClientSocket address creation successfull\n");
 	}
+
 	errorChek = connect(clientSocketFD, (struct sockaddr *)clientAddress, sizeof(struct sockaddr));
 
 	if (errorChek == 0)
@@ -52,10 +54,8 @@ int main(int argc, char *argv[])
 
 	message = "GET \\ HTTP/1.1\r\nHost:google.com\r\n\r\n";
 	send(clientSocketFD, message, strlen(message), 0);
-
 	recv(clientSocketFD, buffer, 2048, 0);
-
-	printf("From Goorle Server: %s\n", buffer);
+	printf("From Server: %s\n", buffer);
 
 	return (0);
 }
