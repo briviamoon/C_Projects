@@ -3,7 +3,6 @@
  * main - creates a server
  * Return: 0 if success
  */
-
 int main(int argc, char *argv[])
 {
 	int serverSocketFD;

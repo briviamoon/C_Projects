@@ -18,13 +18,21 @@ void startAcceptingNewConnections(int SocketFD);
 void acceptRecievePrint(int socketFD);
 void recieveAndPrintDataSeperateThread(struct AcceptedClient *clientSocket);
 void *threadFunctionSeperateThreads(void *arg);
+void broadcastClientGroup(char *messageLine, int socketFD);
+void listenAndPrintMessagesThread(int socketFD);
+void *threadFunctionListenPrint(void *arg);
+void listenPrint(int socketFD);
+void listenAndPrintMessagesThread(int socketFD);
+
 
 struct AcceptedClient
 {
-	int acceptedClienSockettFD;
+	int acceptedClienSocketFD;
 	struct sockaddr_in ClientAddress;
 	bool acceptedSuccessfully;
 	int error;
 } ;
+
+
 
 #endif

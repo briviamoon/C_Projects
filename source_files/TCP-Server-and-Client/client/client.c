@@ -57,6 +57,8 @@ int main(int argc, char *argv[])
 
 	printf("Type your Message\n");
 
+	listenAndPrintMessagesThread(clientSocketFD);
+
 	while (true)
 	{
 		printf("%s: ", yourName);

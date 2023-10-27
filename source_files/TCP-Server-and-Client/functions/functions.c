@@ -1,4 +1,8 @@
 #include "../headers/server.h"
+
+struct AcceptedClient clientGroup[10];
+int acceptedClientCount = 0;
+
 /**
  * createIPV4Address - creates an IPV address structure
  * @port: port number
@@ -51,7 +55,7 @@ struct AcceptedClient *acceptIncomingClient(int serverSocketFD)
 
 	client = malloc(sizeof(struct AcceptedClient));
 	client->ClientAddress = *clientAddress;
-	client->acceptedClienSockettFD = clientSocketFD;
+	client->acceptedClienSocketFD = clientSocketFD;
 	client->acceptedSuccessfully = clientSocketFD > 0;
 
 	if (!client->acceptedSuccessfully)
@@ -62,37 +66,11 @@ struct AcceptedClient *acceptIncomingClient(int serverSocketFD)
 	return (client);
 }
 
-/**
- * receiveAndPrintData - receives and prints data
- */
-void recieveAndPrintData(int socketFD)
-{
-	int charCountMessageLine;
-	char messageLine[2048];
-
-	while (true)
-	{
-		charCountMessageLine = recv(socketFD, &messageLine, 2048, 0);
-
-		if (charCountMessageLine > 0)
-		{
-			messageLine[charCountMessageLine] = 0;
-			printf("Client: %s\n", messageLine);
-		}
-		else
-		{
-			break;
-		}
-	}
-
-	close(socketFD);
-}
-
 
 /**
  * function that accepts new connections and calls a printing function
  * @SocketFD: server socketFD.
-*/
+ */
 void startAcceptingNewConnections(int serverSocketFD)
 {
 	while (true)
@@ -105,6 +83,7 @@ void startAcceptingNewConnections(int serverSocketFD)
 		{
 			printf("client Socket Connection success\n");
 		}
+		clientGroup[acceptedClientCount++] = *clientSocket;
 		/*function that receives and prints data*/
 		recieveAndPrintDataSeperateThread(clientSocket);
 	}
@@ -112,12 +91,12 @@ void startAcceptingNewConnections(int serverSocketFD)
 
 /**
  * receiveAndPrintDataSeperateThread - receive and prints data from client
- * @socketFD: clientsocketFD;
-*/
+ * @clientSocket: pointer to structure of accepted client socket
+ */
 void recieveAndPrintDataSeperateThread(struct AcceptedClient *clientSocket)
 {
 	pthread_t id;
-	pthread_create(&id, NULL, threadFunctionSeperateThreads, &clientSocket->acceptedClienSockettFD);
+	pthread_create(&id, NULL, threadFunctionSeperateThreads, &clientSocket->acceptedClienSocketFD);
 }
 /**
  * threadFunctionSeperateTreads - calls receive & print function
@@ -125,11 +104,109 @@ void recieveAndPrintDataSeperateThread(struct AcceptedClient *clientSocket)
  * Description: function substitutes void argument with socketFD arg
  * this is because the pthread_create function accepts a par of type void
  * then passes a socketFD file into it. the passed argument is then switched
- * and passed to our true intended function call 
-*/
+ * and passed to our true intended function call
+ */
 void *threadFunctionSeperateThreads(void *arg)
 {
 	int SocketFD = *((int *)arg);
 	recieveAndPrintData(SocketFD);
 	return NULL;
+}
+
+/**
+ * receiveAndPrintData - receives and prints data
+ */
+void recieveAndPrintData(int clientSocketFD)
+{
+	size_t charCountMessageLine;
+	char messageLine[2048];
+
+	while (true)
+	{
+		charCountMessageLine = recv(clientSocketFD, &messageLine, 2048, 0);
+
+		if (charCountMessageLine > 0)
+		{
+			messageLine[charCountMessageLine] = 0;
+			printf("Client: %s\n", messageLine);
+			broadcastClientGroup(messageLine, clientSocketFD);
+		}
+		if (charCountMessageLine == 0)
+		{
+			break;
+		}
+	}
+
+	close(clientSocketFD);
+}
+
+
+/**
+ * sends the 
+*/
+void broadcastClientGroup(char *messageLine, int socketFD)
+{
+	int i;
+
+	for (i = 0; i < acceptedClientCount; i++)
+	{
+		if (clientGroup[i].acceptedClienSocketFD != socketFD)
+		{
+			send(clientGroup[i].acceptedClienSocketFD, messageLine, strlen(messageLine), 0);
+		}
+	}
+}
+
+
+/**
+ * listenAndPrintMessagesThread - create's a thead of listeners & printers
+ * @socketFD: socket File Dscriptor 
+*/
+void listenAndPrintMessagesThread(int socketFD)
+{
+	pthread_t id;
+
+	pthread_create(&id, NULL, threadFunctionListenPrint, &socketFD);
+}
+
+/**
+ * threadFunctioListenPrint - calls ListenPrint(...) function
+ * @arg: void argument
+ * Description: function substitutes void argument with socketFD arg
+ * this is because the pthread_create function accepts a par of type void
+ * then passes a socketFD file into it. the passed argument is then switched
+ * and passed to our true intended function call
+ */
+void *threadFunctionListenPrint(void *arg)
+{
+	int socketFD = *((int *)arg);
+	listenPrint(socketFD);
+	return NULL;
+}
+
+
+/**
+ * listenPrint - listens & prints broadcast message.
+ * @clientSocketFD: client's socket file descriptor
+*/
+void listenPrint(int clientSocketFD)
+{	int charCountbuffer;
+	char buffer[2048];
+
+	while (true)
+	{
+		charCountbuffer = recv(clientSocketFD, buffer, 2048, 0);
+
+		if (charCountbuffer > 0)
+		{
+			buffer[charCountbuffer] = 0;
+			printf("Other Client: %s\n", buffer);
+		}
+		if (charCountbuffer == 0)
+		{
+			break;
+		}
+	}
+
+	close(clientSocketFD);
 }
