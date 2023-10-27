@@ -7,15 +7,10 @@
 int main(int argc, char *argv[])
 {
 	int serverSocketFD;
-	int clientSocketFD;
 	int errorCheck;
-	unsigned int sizeOfClientAddress;
 	char *port;
 	char *address;
-	char buffer[2048];
-	char *messageToClient;
 	struct sockaddr_in *serverAddress;
-	struct sockaddr_in *clientAddress;
 
 	if (argc < 3)
 	{
@@ -64,25 +59,10 @@ int main(int argc, char *argv[])
 		printf("Failed listening for client\n");
 		exit(1);
 	}
+	/*function that creates a thread for each new connection*/
+	startAcceptingNewConnections(serverSocketFD);
 
-	clientAddress = malloc(sizeof(struct sockaddr_in));
-	sizeOfClientAddress = sizeof(struct sockaddr_in);
-	clientSocketFD = accept(serverSocketFD, (struct sockaddr *)clientAddress, &sizeOfClientAddress);
-
-	if (clientSocketFD == -1)
-	{
-		printf("ServerSide ClientSocketFD creation Failed\n");
-		exit(1);
-	}
-	else
-	{
-		printf("ServerSide ClientSocketFD creation passed\n");
-		messageToClient = "Package Received";
-		send(clientSocketFD, messageToClient, strlen(messageToClient), 0);
-	}
-
-	recv(clientSocketFD, buffer, 2048, 0);
-	printf("From Client: %s\n", buffer);
+	shutdown(serverSocketFD, SHUT_RDWR);
 
 	return (0);
 }

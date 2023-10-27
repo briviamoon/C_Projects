@@ -8,19 +8,22 @@ int main(int argc, char *argv[])
 	int clientSocketFD;
 	char *port;
 	char *address;
+	char *yourName;
 	int errorChek;
-	char *message;
-	char buffer[2048];
+	char *messageLine = NULL;
+	size_t lineSize = 0;
+	size_t charCountMessageLine;
 	struct sockaddr_in *clientAddress;
 
-	if (argc < 3)
+	if (argc < 4)
 	{
-		printf("Please Provide the Server Address and port to use\n");
+		printf("Please Provide the Server Address, port to use, and Name to identify yourself\n");
 		exit(1);
 	}
 
 	address = argv[1];
 	port = argv[2];
+	yourName = argv[3];
 	clientSocketFD = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (clientSocketFD == -1)
@@ -52,10 +55,23 @@ int main(int argc, char *argv[])
 		printf("Client connection established!\n");
 	}
 
-	message = "GET \\ HTTP/1.1\r\nHost:google.com\r\n\r\n";
-	send(clientSocketFD, message, strlen(message), 0);
-	recv(clientSocketFD, buffer, 2048, 0);
-	printf("From Server: %s\n", buffer);
+	printf("Type your Message\n");
 
+	while (true)
+	{
+		printf("%s: ", yourName);
+		charCountMessageLine = getline(&messageLine, &lineSize, stdin);
+
+		if (charCountMessageLine > 0)
+		{
+			if (strcmp(messageLine, "quit\n") == 0)
+			{
+				break;
+			}
+			send(clientSocketFD, messageLine, charCountMessageLine, 0);
+		}
+	}
+
+	close(clientSocketFD);
 	return (0);
 }
