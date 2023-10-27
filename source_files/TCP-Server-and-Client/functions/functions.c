@@ -64,7 +64,6 @@ struct AcceptedClient *acceptIncomingClient(int serverSocketFD)
 
 /**
  * receiveAndPrintData - receives and prints data
- *
  */
 void recieveAndPrintData(int socketFD)
 {
@@ -120,7 +119,14 @@ void recieveAndPrintDataSeperateThread(struct AcceptedClient *clientSocket)
 	pthread_t id;
 	pthread_create(&id, NULL, threadFunctionSeperateThreads, &clientSocket->acceptedClienSockettFD);
 }
-
+/**
+ * threadFunctionSeperateTreads - calls receive & print function
+ * @arg: void argument
+ * Description: function substitutes void argument with socketFD arg
+ * this is because the pthread_create function accepts a par of type void
+ * then passes a socketFD file into it. the passed argument is then switched
+ * and passed to our true intended function call 
+*/
 void *threadFunctionSeperateThreads(void *arg)
 {
 	int SocketFD = *((int *)arg);
