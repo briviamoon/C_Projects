@@ -2,6 +2,7 @@
 
 struct AcceptedClient clientGroup[10];
 int acceptedClientCount = 0;
+pthread_mutex_t clientGroupMutex = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * createIPV4Address - creates an IPV address structure
@@ -129,7 +130,10 @@ void recieveAndPrintData(int clientSocketFD)
 		{
 			messageLine[charCountMessageLine] = 0;
 			printf("Client: %s\n", messageLine);
-			broadcastClientGroup(messageLine, clientSocketFD);
+			
+			pthread_mutex_lock(&clientGroupMutex);
+            broadcastClientGroup(messageLine, clientSocketFD);
+            pthread_mutex_unlock(&clientGroupMutex);
 		}
 		if (charCountMessageLine == 0)
 		{

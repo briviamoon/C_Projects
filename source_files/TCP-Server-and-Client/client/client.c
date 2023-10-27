@@ -1,6 +1,6 @@
 #include "../headers/server.h"
 /**
- * main - initiate Server to Live.
+ * main - initiate client to Live.
  * Return: 0 if proccess succesful.
  */
 int main(int argc, char *argv[])
