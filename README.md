@@ -47,4 +47,4 @@ This repository is open-source and available under the [MIT License](LICENSE). F
 I hope you find these projects helpful and informative. If you have any questions or suggestions, please don't hesitate to reach out. Happy coding!
 
 - Author: [Brivia Allan](https://github.com/briviamoon)
-- email: [briviamoon@gmail.com]
+- email: briviamoon@gmail.com
