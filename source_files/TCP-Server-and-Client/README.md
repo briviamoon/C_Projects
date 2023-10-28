@@ -48,7 +48,7 @@ You can enhance the program by implementing custom protocols, data exchange, and
 
 ## Author
 
-- [Brivia Allan]
+- [Brivia]
 - GitHub: [briviamoon](https://github.com/briviamoon/)
 
 ## License
