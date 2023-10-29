@@ -1,4 +1,5 @@
-#include "../headers/server.h"
+#include "../headers/socket.h"
+
 /**
  * main - initiate client to Live.
  * Return: 0 if proccess succesful.
@@ -57,10 +58,16 @@ int main(int argc, char *argv[])
 
 	printf("Type your Message\n");
 
-	listenAndPrintMessagesThread(clientSocketFD);
-
 	while (true)
 	{
+		int i;
+
+		for (i = 0; i < acceptedClientCount; i++)
+		{
+			listenAndPrintMessagesThread(clientGroup[i].acceptedClientSocketFD);
+		}
+		
+
 		printf("%s: ", yourName);
 		charCountMessageLine = getline(&messageLine, &lineSize, stdin);
 

@@ -1,4 +1,4 @@
-#include "../headers/server.h"
+#include "../headers/socket.h"
 
 struct AcceptedClient clientGroup[10];
 int acceptedClientCount = 0;
@@ -34,6 +34,35 @@ struct sockaddr_in *createIPV4Address(int port, char *ip)
 }
 
 /**
+ * function that accepts new connections and calls a printing function
+ * @SocketFD: server socketFD.
+ * Description: Function waits for client connections
+ * and calls acceptincomingClient() function.
+ * The Client group structure elements are filled by
+ * socket structures of the incoming clients.
+ * The function then calls the receiveAndPrintDataSeperateThread() function
+ * to create threads of individual client packets.
+ */
+void startAcceptingNewConnections(int serverSocketFD)
+{
+	while (true)
+	{
+		struct AcceptedClient *clientSocket;
+
+		/*function creates a srtucture for the the client socket*/
+		clientSocket = acceptIncomingClient(serverSocketFD);
+		if (clientSocket->error > 0)
+		{
+			printf("client Socket Connection success\n");
+		}
+		/*function to add a new client to the client group*/
+		addClientsToGroup(*clientSocket);
+		/*function that receives and prints data*/
+		recieveAndPrintDataSeperateThread(clientSocket);
+	}
+}
+
+/**
  * acceptIncomingClient - creates a structure for client socket in server
  * @serverSocketFD: file descriptor to server socket
  * Return: returns a pointer to new cientSocket structure.
@@ -56,7 +85,7 @@ struct AcceptedClient *acceptIncomingClient(int serverSocketFD)
 
 	client = malloc(sizeof(struct AcceptedClient));
 	client->ClientAddress = *clientAddress;
-	client->acceptedClienSocketFD = clientSocketFD;
+	client->acceptedClientSocketFD = clientSocketFD;
 	client->acceptedSuccessfully = clientSocketFD > 0;
 
 	if (!client->acceptedSuccessfully)
@@ -67,38 +96,39 @@ struct AcceptedClient *acceptIncomingClient(int serverSocketFD)
 	return (client);
 }
 
-
 /**
- * function that accepts new connections and calls a printing function
- * @SocketFD: server socketFD.
+ * addClientsToGroup - adds a new client to a group of clients
+ * @newClient: new client to add to group.
+ * Description: This function adds a new client to a client group
+ * While locking the action in a mutex and unlocking after.
  */
-void startAcceptingNewConnections(int serverSocketFD)
+void addClientsToGroup(struct AcceptedClient newClient)
 {
-	while (true)
-	{
-		struct AcceptedClient *clientSocket;
+	pthread_mutex_lock(&clientGroupMutex);
 
-		/*function creates a srtucture for the the client socket*/
-		clientSocket = acceptIncomingClient(serverSocketFD);
-		if (clientSocket->error > 0)
-		{
-			printf("client Socket Connection success\n");
-		}
-		clientGroup[acceptedClientCount++] = *clientSocket;
-		/*function that receives and prints data*/
-		recieveAndPrintDataSeperateThread(clientSocket);
+	if (acceptedClientCount < MAXIMUM_CLIENTS)
+	{
+		clientGroup[acceptedClientCount++] = newClient;
 	}
+	else
+	{
+		printf("Sorry! the server is full, try again later\n");
+	}
+	pthread_mutex_unlock(&clientGroupMutex);
 }
 
 /**
  * receiveAndPrintDataSeperateThread - receive and prints data from client
  * @clientSocket: pointer to structure of accepted client socket
+ * Description: This function creates a thread of client messages
+ * by calling the threadFunctionSeperateThreads() function.
  */
 void recieveAndPrintDataSeperateThread(struct AcceptedClient *clientSocket)
 {
 	pthread_t id;
-	pthread_create(&id, NULL, threadFunctionSeperateThreads, &clientSocket->acceptedClienSocketFD);
+	pthread_create(&id, NULL, threadFunctionSeperateThreads, &clientSocket->acceptedClientSocketFD);
 }
+
 /**
  * threadFunctionSeperateTreads - calls receive & print function
  * @arg: void argument
@@ -116,6 +146,11 @@ void *threadFunctionSeperateThreads(void *arg)
 
 /**
  * receiveAndPrintData - receives and prints data
+ * @clientSocketFD: server-side client socket file descriptor
+ * Description: the function waits for client data
+ * and prints it to the stndard output. The function calls
+ * a broadcastClientGroup() function wrapped in lock & unlock mutex
+ * to broadcast the a cliet message to every other client.
  */
 void recieveAndPrintData(int clientSocketFD)
 {
@@ -128,15 +163,21 @@ void recieveAndPrintData(int clientSocketFD)
 
 		if (charCountMessageLine > 0)
 		{
-			messageLine[charCountMessageLine] = 0;
+			messageLine[charCountMessageLine] = '\0';
 			printf("Client: %s\n", messageLine);
-			
+
 			pthread_mutex_lock(&clientGroupMutex);
-            broadcastClientGroup(messageLine, clientSocketFD);
-            pthread_mutex_unlock(&clientGroupMutex);
+			broadcastClientGroup(messageLine, clientSocketFD);
+			pthread_mutex_unlock(&clientGroupMutex);
 		}
-		if (charCountMessageLine == 0)
+		else if (charCountMessageLine == 0)
 		{
+			printf("Client Disconected\n");
+			break;
+		}
+		else
+		{
+			perror("recv");
 			break;
 		}
 	}
@@ -144,28 +185,31 @@ void recieveAndPrintData(int clientSocketFD)
 	close(clientSocketFD);
 }
 
-
 /**
- * sends the 
-*/
+ * broadcastClientGroup - broadcasts a client's data.
+ * @messageLine: string of data to send.
+ * @socketFD: socket file descriptor.
+ * Description: the function calls a send function that
+ * formats and broadcasts client data to everyother client in clientGroup.
+ */
 void broadcastClientGroup(char *messageLine, int socketFD)
 {
 	int i;
 
 	for (i = 0; i < acceptedClientCount; i++)
 	{
-		if (clientGroup[i].acceptedClienSocketFD != socketFD)
+		if (clientGroup[i].acceptedClientSocketFD != socketFD)
 		{
-			send(clientGroup[i].acceptedClienSocketFD, messageLine, strlen(messageLine), 0);
+			send(clientGroup[i].acceptedClientSocketFD, messageLine, strlen(messageLine), 0);
 		}
 	}
 }
 
-
 /**
- * listenAndPrintMessagesThread - create's a thead of listeners & printers
- * @socketFD: socket File Dscriptor 
-*/
+ * listenAndPrintMessagesThread - create's a thead to print client data
+ * @socketFD: socket File Dscriptor
+ * Description: creates threads to listen and print client data.
+ */
 void listenAndPrintMessagesThread(int socketFD)
 {
 	pthread_t id;
@@ -188,13 +232,15 @@ void *threadFunctionListenPrint(void *arg)
 	return NULL;
 }
 
-
 /**
- * listenPrint - listens & prints broadcast message.
- * @clientSocketFD: client's socket file descriptor
-*/
+ * listenPrint - listens & prints broadcasted data.
+ * @clientSocketFD: client's socket file descriptor.
+ * Description: waits for server to brodcast message
+ * and fills to a buffer then prints and closes the socket.
+ */
 void listenPrint(int clientSocketFD)
-{	int charCountbuffer;
+{
+	int charCountbuffer;
 	char buffer[2048];
 
 	while (true)

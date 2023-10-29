@@ -1,4 +1,4 @@
-#include "../headers/server.h"
+#include "../headers/socket.h"
 /**
  * main - creates a server
  * Return: 0 if success

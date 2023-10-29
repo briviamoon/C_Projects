@@ -1,5 +1,5 @@
-#ifndef SERVER_H
-#define SERVER_H
+#ifndef SOCKET_H
+#define SOCKET_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,18 +21,23 @@ void *threadFunctionSeperateThreads(void *arg);
 void broadcastClientGroup(char *messageLine, int socketFD);
 void listenAndPrintMessagesThread(int socketFD);
 void *threadFunctionListenPrint(void *arg);
-void listenPrint(int socketFD);
+void listenPrint(int clientSocketFD);
 void listenAndPrintMessagesThread(int socketFD);
+void addClientsToGroup(struct AcceptedClient newClient);
 
+#define MAXIMUM_CLIENTS 10
 
 struct AcceptedClient
 {
-	int acceptedClienSocketFD;
+	int acceptedClientSocketFD;
 	struct sockaddr_in ClientAddress;
 	bool acceptedSuccessfully;
 	int error;
-} ;
+};
 
 
+extern struct AcceptedClient clientGroup[MAXIMUM_CLIENTS];
+extern int acceptedClientCount;
+extern pthread_mutex_t clientGroupMutex;
 
 #endif
